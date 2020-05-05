@@ -1,7 +1,8 @@
-from flask import Flask, g
+from flask import (Flask, g, render_template, flash, redirect, url_for)
 from flask_login import LoginManager
 
 import models
+import forms
 
 app = Flask(__name__)
 app.secret_key = 'mwnkwffmdo2424iksldf.,mf32fmm.arof!$#mi32#)'
@@ -33,9 +34,23 @@ def after_request(response):
     return response
 
 
+@app.route('/register', methods=('GET', 'POST'))
+def register():
+    form = forms.RegisterForm()
+    if form.validate_on_submit():
+        flash("Awyeah, you registered!", 'success')
+        models.User.create_user(
+            username=form.username.data,
+            email=form.email.data,
+            password=form.password.data
+        )
+        return redirect(url_for('index'))
+    return render_template('register.html', form=form)
+
+
 @app.route('/')
-def hello_world():
-    return 'Hello World!'
+def index():
+    return 'Siema'
 
 
 if __name__ == '__main__':
