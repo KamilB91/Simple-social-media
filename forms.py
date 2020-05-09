@@ -32,7 +32,6 @@ class RegisterForm(Form):
         'Email',
         validators=[
             DataRequired(),
-            Email(),
             email_exists
         ])
     password = PasswordField(
