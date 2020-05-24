@@ -27,6 +27,10 @@
             {% else %}
                 <a href="{{ url_for('unfollow', username=user.username) }}" class="small">Unfollow</a>
             {% endif %}
+        {% else %}
+            <div class="row">
+                <a href="#">Update</a>
+            </div>
         {% endif %}
     {% endif %}
     </div>
