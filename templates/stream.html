@@ -4,7 +4,11 @@
 {% for post in stream %}
     <article>
         <h2>
+            {% if current_user.is_authenticated %}
             <a href="{{ url_for('stream', username=post.user.username) }}">{{ post.user.username }}</a>
+            {% else %}
+            <h2>{{ post.user.username }}</h2>
+            {% endif %}
         </h2>
         <div class="post">
             {{ post.content }}
