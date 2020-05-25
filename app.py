@@ -49,7 +49,7 @@ def register():
             email=form.email.data,
             password=form.password.data
         )
-        return redirect(url_for('index'))
+        return redirect(url_for('login'))
     return render_template('register.html', form=form)
 
 
@@ -169,14 +169,18 @@ def not_found(error):
     return render_template('404.html'), 404
 
 
-if __name__ == '__main__':
+def account_deleted():
     try:
         models.User.create_user(
-            username='Kamil',
-            email='kb91@gmail.com',
-            password='haslo',
-            admin=True
+            username='account_deleted',
+            email=None,
+            password=None,
+            admin=False
         )
     except ValueError:
         pass
+
+
+account_deleted()
+if __name__ == '__main__':
     app.run(debug=True)
