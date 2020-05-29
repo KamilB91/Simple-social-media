@@ -55,3 +55,25 @@ class LoginForm(FlaskForm):
 
 class PostForm(FlaskForm):
     content = TextAreaField('Write your post here.', validators=[DataRequired()])
+
+
+class UpdateEmail(FlaskForm):
+    email = StringField(
+        'New Email',
+        validators=[DataRequired(),
+                    Email(),
+                    email_exists])
+    password = PasswordField('Password', validators=[DataRequired()])
+
+
+class UpdatePassword(FlaskForm):
+    old_password = PasswordField('Old password', validators=[DataRequired()])
+    password = PasswordField(
+        'New password',
+        validators=[
+            DataRequired(),
+            Length(min=2),
+            EqualTo('password2', message='Password must match')])
+    password2 = PasswordField(
+        'Confirm password',
+        validators=[DataRequired()])

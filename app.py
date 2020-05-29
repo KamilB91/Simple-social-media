@@ -15,6 +15,30 @@ login_manager.login_view = 'login'
 # models.initialize() does not work in 'if name == main' statement
 models.initialize()
 
+try:
+    models.User.create_user(
+        username='account_deleted',
+        email='None',
+        password='None',
+        admin=False
+    )
+    print('success')
+except ValueError as error:
+    print(error)
+
+try:
+    models.User.create_user(
+        username='TestUser',
+        email='test@example.com',
+        password='haslo',
+        admin=False
+    )
+    print('success')
+except ValueError as error:
+    print(error)
+
+account_deleted = models.User.get(models.User.username == 'account_deleted')
+
 
 @login_manager.user_loader
 def load_user(userid):
@@ -53,6 +77,19 @@ def register():
     return render_template('register.html', form=form)
 
 
+@app.route('/delete')
+def delete_account():
+    user = g.user._get_current_object()
+    models.Relationship.delete().where(models.Relationship.to_user == user & models.Relationship.from_user == user)
+    posts = models.Post.select().where(models.Post.user == user)
+    for post in posts:
+        post.user = account_deleted
+        post.save()
+    logout_user()
+    user.delete_instance()
+    return redirect(url_for('index'))
+
+
 @app.route('/login', methods=('GET', 'POST'))
 def login():
     form = forms.LoginForm()
@@ -79,6 +116,44 @@ def logout():
     return redirect(url_for('index'))
 
 
+@app.route('/update_options')
+@login_required
+def update_options():
+    return render_template('update_options.html')
+
+
+@app.route('/update_email', methods=('POST', 'GET'))
+@login_required
+def update_email():
+    form = forms.UpdateEmail()
+    if form.validate_on_submit():
+        user = g.user._get_current_object()
+        if check_password_hash(user.password, form.password.data):
+            flash('Success!', 'success')
+            user.email = form.email.data
+            user.save()
+            return redirect(url_for('index'))
+        else:
+            flash('Incorrect password', 'error')
+    return render_template('update_email.html', form=form)
+
+
+@app.route('/update_password', methods=('GET', 'POST'))
+@login_required
+def update_password():
+    form = forms.UpdatePassword()
+    if form.validate_on_submit():
+        user = g.user._get_current_object()
+        if check_password_hash(user.password, form.old_password.data):
+            flash('Password updated!', 'success')
+            user.password = models.generate_password_hash(form.password.data)
+            user.save()
+            return redirect(url_for('index'))
+        else:
+            flash('Incorrect password', 'error')
+    return render_template('update_password.html', form=form)
+
+
 @app.route('/new_post', methods=('POST', 'GET'))
 @login_required
 def post():
@@ -100,6 +175,8 @@ def index():
 @app.route('/stream')
 @app.route('/stream/<username>')
 def stream(username=None):
+    if username == account_deleted.username:
+        abort(404)
     template = 'stream.html'
     if username and username != current_user.username:
         try:
@@ -169,18 +246,10 @@ def not_found(error):
     return render_template('404.html'), 404
 
 
-def account_deleted():
-    try:
-        models.User.create_user(
-            username='account_deleted',
-            email=None,
-            password=None,
-            admin=False
-        )
-    except ValueError:
-        pass
+users = models.User.select()
+for user in users:
+    print(user.username)
 
 
-account_deleted()
 if __name__ == '__main__':
     app.run(debug=True)

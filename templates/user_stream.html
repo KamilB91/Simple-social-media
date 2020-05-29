@@ -21,20 +21,18 @@
     <div class="grid-25">
         <!-- follow/unfollow button -->
     {% if current_user.is_authenticated %}
-        {% if user != current_user %}
+        {% if user != current_user and user.username != 'account_deleted' %}
             {% if not user in current_user.following() %}
                 <a href="{{ url_for('follow', username=user.username) }}" class="small">Follow</a>
             {% else %}
                 <a href="{{ url_for('unfollow', username=user.username) }}" class="small">Unfollow</a>
             {% endif %}
-        {% else %}
-            <div class="row">
-                <div class="grid-33">
-                    <a href="#">Update</a>
-                </div>
-                <div class="grid-33">
-                    <a href="#">Delete account</a>
-                </div>
+        {% elif user == current_user and user.username != 'account_deleted' %}
+            <div class="grid-33">
+                <a href="{{ url_for('update_options') }}">Update</a>
+            </div>
+            <div class="grid-33">
+                <a href="{{ url_for('delete_account') }}">Delete account</a>
             </div>
         {% endif %}
     {% endif %}
