@@ -39,6 +39,12 @@ class User(UserMixin, Model):
             User.select().join(Relationship, on=Relationship.from_user).where(Relationship.to_user == self)
         )
 
+    def blocked_users(self):
+        """Get blocked users"""
+        return (
+            User.select().join(Blocked, on=Blocked.to_user).where(Blocked.from_user == self)
+        )
+
     @classmethod
     def create_user(cls, username, email, password, admin=False):
         try:
@@ -76,7 +82,18 @@ class Relationship(Model):
         )
 
 
+class Blocked(Model):
+    from_user = ForeignKeyField(User, backref='bocked_users')
+    to_user = ForeignKeyField(User, backref='blocked_me')
+
+    class Meta:
+        database = DATABASE
+        indexes = (
+            (('from_user', 'to_user'), True),
+        )
+
+
 def initialize():
     DATABASE.connect()
-    DATABASE.create_tables([User, Post, Relationship], safe=True)
+    DATABASE.create_tables([User, Post, Relationship, Blocked], safe=True)
     DATABASE.close()

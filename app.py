@@ -29,7 +29,7 @@ except ValueError as error:
 try:
     models.User.create_user(
         username='TestUser',
-        email='test@example.com',
+        email='t@t.com',
         password='haslo',
         admin=False
     )
@@ -81,6 +81,7 @@ def register():
 def delete_account():
     user = g.user._get_current_object()
     models.Relationship.delete().where(models.Relationship.to_user == user & models.Relationship.from_user == user)
+    models.Blocked.delete().where(models.Blocked.to_user == user & models.Blocked.from_user == user)
     posts = models.Post.select().where(models.Post.user == user)
     for post in posts:
         post.user = account_deleted
@@ -168,8 +169,16 @@ def post():
 
 @app.route('/')
 def index():
-    stream = models.Post.select().limit(100)
-    return render_template('stream.html', stream=stream)
+    try:
+        user = g.user._get_current_object()
+        stream = models.Post.select().where((models.Post.user == user) |
+                                            (models.Post.user not in user.blocked_users() and
+                                             models.Post.user not in user.blocked_me))
+    except AttributeError:
+        stream = models.Post.select()
+        return render_template('stream.html', stream=stream)
+    else:
+        return render_template('stream.html', stream=stream)
 
 
 @app.route('/stream')
@@ -181,6 +190,8 @@ def stream(username=None):
     if username and username != current_user.username:
         try:
             user = models.User.select().where(models.User.username**username).get()
+            if current_user in user.blocked_users():
+                abort(404)
         except models.DoesNotExist:
             abort(404)
         else:
@@ -239,6 +250,46 @@ def unfollow(username):
         else:
             flash(f"You've unfollowed {to_user.username}", "success")
     return redirect(url_for('stream', username=to_user.username))
+
+
+@app.route('/block_user/<username>')
+@login_required
+def block(username):
+    try:
+        to_user = models.User.get(models.User.username**username)
+    except models.DoesNotExist:
+        abort(404)
+    else:
+        try:
+            models.Blocked.create(
+                from_user=g.user._get_current_object(),
+                to_user=to_user
+            )
+        except models.IntegrityError:
+            pass
+        else:
+            flash(f"You've blocked {to_user.username}", "success")
+    return redirect(url_for('index'))
+
+
+@app.route('/unblock_user/<username>')
+@login_required
+def unblock(username):
+    try:
+        to_user = models.User.get(models.User.username**username)
+    except models.DoesNotExist:
+        abort(404)
+    else:
+        try:
+            models.Blocked.get(
+                from_user=g.user._get_current_object(),
+                to_user=to_user
+            ).delete_instance()
+        except models.IntegrityError:
+            pass
+        else:
+            flash(f"You've unblocked {to_user.username}", "success")
+    return redirect(url_for('index'))
 
 
 @app.errorhandler(404)

@@ -19,13 +19,18 @@
         </div>
     </div>
     <div class="grid-25">
-        <!-- follow/unfollow button -->
+        <!-- follow/block button -->
     {% if current_user.is_authenticated %}
         {% if user != current_user and user.username != 'account_deleted' %}
+            <!-- follow/unfollow -->
             {% if not user in current_user.following() %}
                 <a href="{{ url_for('follow', username=user.username) }}" class="small">Follow</a>
             {% else %}
                 <a href="{{ url_for('unfollow', username=user.username) }}" class="small">Unfollow</a>
+            {% endif %}
+            <!-- block/unblock -->
+            {% if not user in current_user.blocked_users() %}
+                <a href="{{ url_for('block', username=user.username) }}" class="small">Block user</a>
             {% endif %}
         {% elif user == current_user and user.username != 'account_deleted' %}
             <div class="grid-33">
@@ -34,6 +39,12 @@
             <div class="grid-33">
                 <a href="{{ url_for('delete_account') }}">Delete account</a>
             </div>
+            {% if current_user.blocked_users() %}
+                {% for blocked in current_user.blocked_users() %}
+                    <h2>{{ blocked.username }}</h2>
+                    <p><a href="{{ url_for('unblock', username=blocked.username) }}" class="small">Unblock {{ blocked.username }}</a></p>
+                {% endfor %}
+            {% endif %}
         {% endif %}
     {% endif %}
     </div>
